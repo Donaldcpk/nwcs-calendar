@@ -6,11 +6,16 @@ The format follows Keep a Changelog, and this project follows Semantic Versionin
 
 ## [Unreleased]
 
+## [0.2.1] – 2026-05-20
+
+### Security
+- 從 README、`.env.example`、`docs/DEPLOYMENT.md` 移除學校 email、專屬網域等可識別私人資訊；敏感值僅保留在 Vercel / `.env.local`。
+
 ## [0.2.0] – 2026-05-20
 
 ### Added
-- `.env.example` 與 `docs/DEPLOYMENT.md`（GitHub / Vercel / Supabase 對照）。
-- 推送完整 Next.js 校曆 MVP 至 `Donaldcpk/nwcs-calendar`。
+- `.env.example` 與 `docs/DEPLOYMENT.md`。
+- 推送完整 Next.js 校曆 MVP。
 
 ### Changed
 - 取代 Vercel 上舊版 Create React App 部署目標（需於 Vercel 後台確認 Framework 為 Next.js 並 Redeploy）。

@@ -2,9 +2,8 @@
 
 SchoolCalendar 是給香港中學學務團隊使用的校曆管理工具，幫助快速排程並即時監控 EDB 合規指標。
 
-- **GitHub**：https://github.com/Donaldcpk/nwcs-calendar
-- **正式環境**：https://schoolcalendar-nwcs.vercel.app
 - **部署說明**：見 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- **敏感設定**：僅放在 Vercel 環境變數與本機 `.env.local`，勿寫入 README 或提交 Git
 
 ## 專案目的
 - 讓副校長能在單一畫面同時掌握「宏觀合規」與「微觀日程操作」。
@@ -48,8 +47,7 @@ SchoolCalendar 是給香港中學學務團隊使用的校曆管理工具，幫�
 
 本地測試時建立 `.env.local`；Vercel 需在 Project Settings > Environment Variables 設定相同鍵值。
 
-`ADMIN_EMAILS` 建議直接填入（逗號分隔、無空白）：
-`nwcs134@ngwahsec.edu.hk,nwcs188@ngwahsec.edu.hk,nwcs217@ngwahsec.edu.hk`
+`ADMIN_EMAILS` 填入授權管理員的 Google 帳號（逗號分隔、無空白），例如：`admin-a@your-school.edu.hk,admin-b@your-school.edu.hk`
 
 ### Google Cloud Console 申請 Client ID / Secret 步驟
 1. 前往 [Google Cloud Console](https://console.cloud.google.com/) 建立專案。
@@ -65,7 +63,7 @@ SchoolCalendar 是給香港中學學務團隊使用的校曆管理工具，幫�
 5. 建立後把 `Client ID`、`Client Secret` 填入 `.env.local` 或 Vercel 環境變數。
 
 ### 權限管理重點
-- email 白名單只讀取 `ADMIN_EMAILS`，系統不會自動新增其他 email（例如 188/217/134）。
+- email 白名單只讀取 `ADMIN_EMAILS`，系統不會自動新增其他 email。
 - 若要新增/移除 Google 管理員，只需在 Vercel 後台修改 `ADMIN_EMAILS` 並重新部署即可。
 - 若要使用管理員帳密登入，必須在 Vercel 明確設定 `ADMIN_USERNAME` 與 `ADMIN_PASSWORD`，且不要把值寫進程式碼。
 - 非白名單帳號登入會被導回登入頁並顯示友善提示訊息。
@@ -79,13 +77,25 @@ SchoolCalendar 是給香港中學學務團隊使用的校曆管理工具，幫�
    - `GOOGLE_CLIENT_ID`
    - `GOOGLE_CLIENT_SECRET`
    - `NEXTAUTH_SECRET`
-   - `NEXTAUTH_URL`（正式網址：`https://schoolcalendar-nwcs.vercel.app`）
-   - `ADMIN_EMAILS`（填入 3 個授權 email）
+   - `NEXTAUTH_URL`（你的 Vercel 正式網址，例：`https://<project>.vercel.app`）
+   - `ADMIN_EMAILS`（授權管理員 email，逗號分隔）
    - `ADMIN_USERNAME`（若要啟用帳密登入才填）
    - `ADMIN_PASSWORD`（若要啟用帳密登入才填）
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
 4. 按 Save 後重新部署（Redeploy）最新版本。
+
+### 上線前安全檢查（一定要做）
+1. 在 GitHub 搜尋 `ADMIN_PASSWORD`、`GOOGLE_CLIENT_SECRET`、`SUPABASE_SERVICE_ROLE_KEY`，確認沒有真實值被提交。
+2. 實測白名單：
+   - 用已列入 `ADMIN_EMAILS` 的 Google 帳號登入，應成功。
+   - 用未列入白名單的 Google 帳號登入，應顯示拒絕。
+3. 若懷疑曾外洩，立刻輪替（rotate）：
+   - Google Client Secret
+   - `NEXTAUTH_SECRET`
+   - Supabase Service Role Key
+
+詳見 [docs/SECURITY.md](docs/SECURITY.md)。
 
 ### 雲端共享校曆（Supabase）
 1. 在 Supabase SQL Editor 執行 `docs/supabase-calendar-snapshots.sql`。
