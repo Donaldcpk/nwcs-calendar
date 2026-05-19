@@ -87,16 +87,6 @@ SchoolCalendar 是給香港中學學務團隊使用的校曆管理工具，幫�
    - `SUPABASE_SERVICE_ROLE_KEY`
 4. 按 Save 後重新部署（Redeploy）最新版本。
 
-### 上線前安全檢查（一定要做）
-1. 在 GitHub 搜尋 `ADMIN_PASSWORD`、`GOOGLE_CLIENT_SECRET`、`SUPABASE_SERVICE_ROLE_KEY`，確認沒有真實值被提交。
-2. 實測白名單：
-   - 用 `nwcs134@ngwahsec.edu.hk`、`nwcs188@ngwahsec.edu.hk`、`nwcs217@ngwahsec.edu.hk` 登入，應成功。
-   - 用其他 Google 帳號登入，應顯示拒絕。
-3. 若懷疑曾外洩，立刻輪替（rotate）：
-   - Google Client Secret
-   - `NEXTAUTH_SECRET`
-   - Supabase Service Role Key
-
 ### 雲端共享校曆（Supabase）
 1. 在 Supabase SQL Editor 執行 `docs/supabase-calendar-snapshots.sql`。
 2. 在 Vercel 設定 `SUPABASE_URL` 與 `SUPABASE_SERVICE_ROLE_KEY`。
