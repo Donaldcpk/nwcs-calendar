@@ -1,9 +1,11 @@
 import { format, parseISO } from "date-fns";
-import type { SchoolDay } from "@/types/school-day";
+import { badgeByType, eventListAccent } from "@/lib/calendar-day-colors";
+import { DayType, SchoolDay } from "@/types/school-day";
 
 export interface MonthlyEventSummaryRow {
   activityName: string;
   displayLine: string;
+  accentClass: string;
 }
 
 function mergeConsecutiveSortedDates(sorted: string[]): { start: string; end: string }[] {
@@ -34,6 +36,24 @@ function formatRangeLabel(startIso: string, endIso: string): string {
   return `${format(a, "M/d")}–${format(b, "M/d")}`;
 }
 
+function dominantAccentClass(entries: SchoolDay[], activityName: string): string {
+  const typeCount = new Map<DayType, number>();
+  for (const day of entries) {
+    if (!day.events.includes(activityName)) continue;
+    typeCount.set(day.type, (typeCount.get(day.type) ?? 0) + 1);
+  }
+  let best: DayType = DayType.Event;
+  let bestN = 0;
+  for (const [type, n] of typeCount) {
+    if (n > bestN) {
+      best = type;
+      bestN = n;
+    }
+  }
+  if (bestN === 0) return eventListAccent;
+  return `${badgeByType[best]} text-slate-800`;
+}
+
 /** 同一月份內，活動名稱出現至少兩天的彙總（連續曆日合併為區間）。 */
 export function buildMonthlyEventSummary(entries: SchoolDay[]): MonthlyEventSummaryRow[] {
   const eventToDates = new Map<string, string[]>();
@@ -55,6 +75,7 @@ export function buildMonthlyEventSummary(entries: SchoolDay[]): MonthlyEventSumm
     rows.push({
       activityName: name,
       displayLine: `${name} ${parts.join("、")}`,
+      accentClass: dominantAccentClass(entries, name),
     });
   }
 

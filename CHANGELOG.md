@@ -6,6 +6,15 @@ The format follows Keep a Changelog, and this project follows Semantic Versionin
 
 ## [Unreleased]
 
+## [0.2.2] – 2026-05-20
+
+### Added
+- Mac ⌘ + 點擊多選（與 Ctrl 相同）；日曆每月橫幅與跨月紫色邊線。
+- 「按活動」檢視依日子類型上色。
+
+### Changed
+- S&S 改為整個學年（如 2026-27）統一計算，上限 79/80；PH 週末不計入 S&S。
+
 ## [0.2.1] – 2026-05-20
 
 ### Security

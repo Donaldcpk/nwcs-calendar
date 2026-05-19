@@ -11,7 +11,7 @@ describe("calculateComplianceMetrics", () => {
       day.type = DayType.Holiday;
       day.countsAs190 = false;
     });
-    const metrics = calculateComplianceMetrics(days);
+    const metrics = calculateComplianceMetrics(days, "2025-09-01", "2026-08-31");
     expect(metrics.schoolDays).toBeLessThan(190);
     expect(metrics.warnings.some((item) => item.includes("上課日數不足"))).toBe(true);
   });
@@ -26,7 +26,7 @@ describe("calculateComplianceMetrics", () => {
     days["2025-09-06"].type = DayType.SDD;
     days["2025-09-07"].type = DayType.SDD;
     days["2025-09-08"].type = DayType.SDD;
-    const metrics = calculateComplianceMetrics(days);
+    const metrics = calculateComplianceMetrics(days, "2025-09-01", "2025-09-20");
     expect(metrics.warnings.some((item) => item.includes("DH"))).toBe(true);
     expect(metrics.warnings.some((item) => item.includes("SDD"))).toBe(true);
   });

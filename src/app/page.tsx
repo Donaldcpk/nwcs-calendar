@@ -33,7 +33,7 @@ export default function Home() {
   const schoolYearEnd = useCalendarStore((state) => state.schoolYearEnd);
   const cycleLength = useCalendarStore((state) => state.cycleLength);
   const replaceCalendarState = useCalendarStore((state) => state.replaceCalendarState);
-  const metrics = useCompliance(days);
+  const metrics = useCompliance(days, schoolYearStart, schoolYearEnd);
   const allDates = useMemo(() => Object.keys(days).sort(), [days]);
   const [activeTab, setActiveTab] = useState<"calendar" | "settings">("calendar");
   const [dashboardCollapsed, setDashboardCollapsed] = useState(false);
@@ -236,7 +236,8 @@ export default function Home() {
           <YearGrid
             days={days}
             selectedDates={selectedDates}
-            onMouseDownDate={(date, withShift) => {
+            onMouseDownDate={(date, withShift, withModifier) => {
+              if (withModifier) return;
               if (withShift && lastShiftAnchor) {
                 setIsDragging(true);
                 setDragAnchor(lastShiftAnchor);
@@ -256,14 +257,14 @@ export default function Home() {
               setSelectedDates(collectDateRange(dragAnchor, date, allDates));
             }}
             onMouseUp={() => setIsDragging(false)}
-            onClickDate={(date, withShift, withCtrl) => {
+            onClickDate={(date, withShift, withModifier) => {
               if (withShift && lastShiftAnchor) {
                 setSelectedDates(collectDateRange(lastShiftAnchor, date, allDates));
                 setActiveDate(date);
                 setLastShiftAnchor(date);
                 return;
               }
-              if (withCtrl) {
+              if (withModifier) {
                 const exists = selectedDates.includes(date);
                 const next = exists ? selectedDates.filter((d) => d !== date) : [...selectedDates, date];
                 setSelectedDates(next);

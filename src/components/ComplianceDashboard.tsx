@@ -28,9 +28,9 @@ export function ComplianceDashboard({ metrics, collapsed, onToggle }: Props) {
           <p className={`w-full rounded border px-1 py-1 text-center text-[10px] font-semibold ${metricColor(metrics.schoolHolidayQuota <= 90)}`}>90</p>
           <p
             className={`w-full rounded border px-1 py-1 text-center text-[10px] font-semibold ${metricColor(
-              metrics.ssByYear.every((r) => r.count <= r.cap),
+              metrics.ssSchoolYear.count <= metrics.ssSchoolYear.cap,
             )}`}
-            title="S&S 週末"
+            title="S&S 週末（學年合計）"
           >
             S&S
           </p>
@@ -62,17 +62,15 @@ export function ComplianceDashboard({ metrics, collapsed, onToggle }: Props) {
         <div className="rounded-lg border p-2"><p className="text-xs text-slate-600">SDD</p><p className={`text-xl font-bold ${metricColor(metrics.sddDays <= 3)}`}>{metrics.sddDays}</p><p className="text-[11px] text-slate-500">上限: 3</p></div>
         <div className="rounded-lg border p-2">
           <p className="text-xs text-slate-600">S&S（不計入 90 之週末）</p>
-          <p className="text-[11px] text-slate-500">曆年週六／日未納入 90 天學校假期者；平年上限 79、閏年 80。</p>
-          <ul className="mt-2 space-y-1">
-            {metrics.ssByYear.map((row) => (
-              <li key={row.year} className="flex items-baseline justify-between gap-2 text-sm">
-                <span className="text-slate-600">{row.year} 年</span>
-                <span className={`font-semibold ${metricColor(row.count <= row.cap)}`}>
-                  {row.count}/{row.cap}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <p className="text-[11px] text-slate-500">
+            以整個學年統一計算（不按曆年拆分）；PH 與 S&S 互斥。學年上限：含 2/29 為 80 天，否則 79 天。
+          </p>
+          <div className="mt-2 flex items-baseline justify-between gap-2 text-sm">
+            <span className="text-slate-600">{metrics.ssSchoolYear.label}</span>
+            <span className={`font-semibold ${metricColor(metrics.ssSchoolYear.count <= metrics.ssSchoolYear.cap)}`}>
+              {metrics.ssSchoolYear.count}/{metrics.ssSchoolYear.cap}
+            </span>
+          </div>
         </div>
       </div>
     </aside>

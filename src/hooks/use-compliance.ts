@@ -1,45 +1,27 @@
 import { useMemo } from "react";
-import { getDay, isLeapYear, parseISO } from "date-fns";
+import { getDay, parseISO } from "date-fns";
 import { DayType, SchoolDayMap } from "@/types/school-day";
 import { calculateSchoolHolidayQuotaWithTrace } from "@/lib/holiday-quota";
+import { buildSsForSchoolYear, SsSchoolYearSummary } from "@/lib/ss-school-year";
 
-export interface SsYearRow {
-  year: number;
-  count: number;
-  cap: number;
-}
+export type { SsSchoolYearSummary };
 
 export interface ComplianceMetrics {
   schoolDays: number;
   schoolHolidayQuota: number;
   dhDays: number;
   sddDays: number;
-  ssByYear: SsYearRow[];
+  ssSchoolYear: SsSchoolYearSummary;
   warnings: string[];
 }
 
 const nonSchoolTypes = new Set<DayType>([DayType.Holiday, DayType.PH, DayType.DH, DayType.SDD]);
 
-function buildSsByYear(days: SchoolDayMap, countedDates: ReadonlySet<string>): SsYearRow[] {
-  const byYear = new Map<number, number>();
-  const years = new Set<number>();
-  for (const date of Object.keys(days)) {
-    const y = parseISO(date).getFullYear();
-    years.add(y);
-    const weekday = getDay(parseISO(date));
-    if (weekday !== 0 && weekday !== 6) continue;
-    if (countedDates.has(date)) continue;
-    byYear.set(y, (byYear.get(y) ?? 0) + 1);
-  }
-  const rows: SsYearRow[] = [];
-  for (const year of Array.from(years).sort((a, b) => a - b)) {
-    const cap = isLeapYear(year) ? 80 : 79;
-    rows.push({ year, count: byYear.get(year) ?? 0, cap });
-  }
-  return rows;
-}
-
-export function calculateComplianceMetrics(days: SchoolDayMap): ComplianceMetrics {
+export function calculateComplianceMetrics(
+  days: SchoolDayMap,
+  schoolYearStart: string,
+  schoolYearEnd: string,
+): ComplianceMetrics {
   const allDays = Object.values(days);
   const { quota: holidayQuota, countedDates } = calculateSchoolHolidayQuotaWithTrace(days);
   let dhDays = 0;
@@ -62,23 +44,24 @@ export function calculateComplianceMetrics(days: SchoolDayMap): ComplianceMetric
   }
 
   const schoolDays = allDays.length - baseNonSchool - weekendOnly + countsAs190Bonus;
-  const ssByYear = buildSsByYear(days, countedDates);
+  const ssSchoolYear = buildSsForSchoolYear(days, countedDates, schoolYearStart, schoolYearEnd);
   const warnings: string[] = [];
   if (schoolDays < 190) warnings.push("警告：上課日數不足，請取消部分假期。");
   if (holidayQuota > 90) warnings.push("警告：School Holidays 超過 90 天上限。");
   if (dhDays > 3) warnings.push("警告：自行決定假期（DH）超過 3 天上限。");
   if (sddDays > 3) warnings.push("警告：教師發展日（SDD）超過 3 天上限。");
-  for (const row of ssByYear) {
-    if (row.count > row.cap) {
-      warnings.push(
-        `警告：${row.year} 年 S&S（不計入 90 天之星期六／日）為 ${row.count} 天，超過該曆年上限 ${row.cap} 天。`,
-      );
-    }
+  if (ssSchoolYear.count > ssSchoolYear.cap) {
+    warnings.push(
+      `警告：${ssSchoolYear.label} S&S（不計入 90 天之星期六／日，不含 PH）為 ${ssSchoolYear.count} 天，超過學年上限 ${ssSchoolYear.cap} 天。`,
+    );
   }
 
-  return { schoolDays, schoolHolidayQuota: holidayQuota, dhDays, sddDays, ssByYear, warnings };
+  return { schoolDays, schoolHolidayQuota: holidayQuota, dhDays, sddDays, ssSchoolYear, warnings };
 }
 
-export function useCompliance(days: SchoolDayMap): ComplianceMetrics {
-  return useMemo(() => calculateComplianceMetrics(days), [days]);
+export function useCompliance(days: SchoolDayMap, schoolYearStart: string, schoolYearEnd: string): ComplianceMetrics {
+  return useMemo(
+    () => calculateComplianceMetrics(days, schoolYearStart, schoolYearEnd),
+    [days, schoolYearStart, schoolYearEnd],
+  );
 }

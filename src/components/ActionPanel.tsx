@@ -22,6 +22,7 @@ export function ActionPanel() {
   const days = useCalendarStore((state) => state.days);
   const selectedDates = useCalendarStore((state) => state.selectedDates);
   const schoolYearStart = useCalendarStore((state) => state.schoolYearStart);
+  const schoolYearEnd = useCalendarStore((state) => state.schoolYearEnd);
   const updateDay = useCalendarStore((state) => state.updateDay);
   const applyBatchUpdate = useCalendarStore((state) => state.applyBatchUpdate);
   const setCycleLength = useCalendarStore((state) => state.setCycleLength);
@@ -60,7 +61,7 @@ export function ActionPanel() {
 
   const openBatchPreview = () => {
     if (selectedDates.length === 0) return;
-    const beforeMetrics = calculateComplianceMetrics(days);
+    const beforeMetrics = calculateComplianceMetrics(days, schoolYearStart, schoolYearEnd);
     const nextDays = { ...days };
     const sortedDates = selectedDates.slice().sort();
 
@@ -77,7 +78,7 @@ export function ActionPanel() {
     }
 
     const recalculated = recalculateCycles(nextDays, cycleLength, schoolYearStart, sortedDates[0]);
-    const afterMetrics = calculateComplianceMetrics(recalculated);
+    const afterMetrics = calculateComplianceMetrics(recalculated, schoolYearStart, schoolYearEnd);
 
     const changes = Object.keys(recalculated)
       .sort()
@@ -138,7 +139,9 @@ export function ActionPanel() {
       </div>
       <div className="mt-4 space-y-2 rounded-lg border p-3">
         <p className="text-sm font-semibold">批次操作（{selectedDates.length} 日）</p>
-        <p className="text-xs text-slate-500">多選方式：滑鼠拖曳，或先點一日再按 Shift 點另一日作區間選取。</p>
+        <p className="text-xs text-slate-500">
+          多選：拖曳範圍；Shift+點擊區間（含首尾）；Ctrl / ⌘ +點擊切換單日（Mac 用 ⌘）。
+        </p>
         <div className="rounded border border-slate-200 p-2">
           <p className="text-xs font-semibold text-slate-600">跳動日數快速選取（例如逢一三五）</p>
           <div className="mt-1 flex flex-wrap gap-2 text-xs">
