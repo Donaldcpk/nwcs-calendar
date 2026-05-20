@@ -14,6 +14,7 @@ export function SettingsPanel() {
   const setExportMapping = useCalendarStore((state) => state.setExportMapping);
   const applyPublicHolidays = useCalendarStore((state) => state.applyPublicHolidays);
   const importTemplateUpdates = useCalendarStore((state) => state.importTemplateUpdates);
+  const applySdecSeed = useCalendarStore((state) => state.applySdecSeed);
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [holidayPreview, setHolidayPreview] = useState<Array<{ date: string; summary: string }>>([]);
   const [overwriteExisting, setOverwriteExisting] = useState(false);
@@ -56,6 +57,11 @@ export function SettingsPanel() {
     const applied = applyPublicHolidays(hkPublicHolidays2026to2027, true);
     setHolidayPreview(hkPublicHolidays2026to2027);
     toast.success(`已套用官方清單，共 ${applied} 天`);
+  };
+
+  const handleApplySdecCsvSeed = () => {
+    const applied = applySdecSeed(overwriteExisting);
+    toast.success(`已套用 SDEC 2026-27 月曆資料，共更新 ${applied} 天（假期＋活動）`);
   };
 
   const handleImportTemplate = async (file: File | null) => {
@@ -139,6 +145,20 @@ export function SettingsPanel() {
             </button>
           </div>
         ) : null}
+      </div>
+
+      <div className="mt-4 rounded-lg border bg-white p-4">
+        <h3 className="text-base font-semibold">SDEC 2026-27 月曆（假期＋活動）</h3>
+        <p className="mt-1 text-sm text-slate-600">
+          依 MonthlyCalendar_2026_2027 CSV：學校假期、公眾假期、教師發展日與全年活動。若雲端已有舊資料，請先勾選下方「覆蓋既有資料」。
+        </p>
+        <button
+          type="button"
+          className="mt-3 rounded bg-violet-600 px-3 py-2 text-sm text-white hover:bg-violet-700"
+          onClick={handleApplySdecCsvSeed}
+        >
+          套用 SDEC 2026-27 完整月曆資料
+        </button>
       </div>
 
       <div className="mt-4 rounded-lg border bg-white p-4">

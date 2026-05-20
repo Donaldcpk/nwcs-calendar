@@ -1,4 +1,5 @@
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
+import { parseLocalDate } from "@/lib/parse-local-date";
 import { badgeByType, eventListAccent } from "@/lib/calendar-day-colors";
 import { DayType, SchoolDay } from "@/types/school-day";
 
@@ -15,8 +16,8 @@ function mergeConsecutiveSortedDates(sorted: string[]): { start: string; end: st
   let runEnd = sorted[0];
   for (let i = 1; i < sorted.length; i += 1) {
     const cur = sorted[i];
-    const prevEnd = parseISO(runEnd);
-    const curD = parseISO(cur);
+    const prevEnd = parseLocalDate(runEnd);
+    const curD = parseLocalDate(cur);
     if (Math.floor((curD.getTime() - prevEnd.getTime()) / 86400000) === 1) {
       runEnd = cur;
     } else {
@@ -30,8 +31,8 @@ function mergeConsecutiveSortedDates(sorted: string[]): { start: string; end: st
 }
 
 function formatRangeLabel(startIso: string, endIso: string): string {
-  const a = parseISO(startIso);
-  const b = parseISO(endIso);
+  const a = parseLocalDate(startIso);
+  const b = parseLocalDate(endIso);
   if (startIso === endIso) return format(a, "M/d");
   return `${format(a, "M/d")}–${format(b, "M/d")}`;
 }

@@ -6,6 +6,13 @@ The format follows Keep a Changelog, and this project follows Semantic Versionin
 
 ## [Unreleased]
 
+### Fixed
+- 全年日曆：每月橫幅 `col-span-7` 插入 7 欄格線導致 9 月 1 日等日期星期錯位（例如 1/9 應為星期二卻顯示在星期日欄）；改為每月獨立對齊。
+
+### Added
+- SDEC `MonthlyCalendar_2026_2027` 預設資料：學校假期、公眾假期、教師發展日與全年活動（設定頁「套用 SDEC 2026-27 完整月曆資料」）。
+- 日曆格子與操作面板：活動事項旁 **×** 按鈕，可單項刪除（仍可用 Ctrl/⌘+Z 復原）。
+
 ## [0.2.2] – 2026-05-20
 
 ### Added

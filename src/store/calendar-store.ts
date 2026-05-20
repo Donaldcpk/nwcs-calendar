@@ -6,7 +6,8 @@ import { temporal } from "zundo";
 import { defaultExportMapping, ExportMapping } from "@/types/export-mapping";
 import { PublicHolidayEvent, injectPublicHolidays } from "@/lib/public-holiday-injection";
 import { DayType, SchoolDayMap } from "@/types/school-day";
-import { createSchoolYearDays, defaultSchoolYearConfig } from "@/lib/calendar-init";
+import { applySdec2026_2027Seed } from "@/lib/apply-sdec-seed";
+import { createSchoolYearDaysWithSdecSeed, defaultSchoolYearConfig } from "@/lib/calendar-init";
 import { recalculateCycles } from "@/lib/cycle-engine";
 import { CalendarSnapshotPayload } from "@/types/calendar-snapshot";
 
@@ -26,6 +27,7 @@ interface CalendarState {
   selectedDates: string[];
   activeDate: string | null;
   updateDay: (date: string, updates: Partial<SchoolDayMap[string]>) => void;
+  removeDayEvent: (date: string, eventName: string) => void;
   applyBatchUpdate: (dates: string[], updates: BatchUpdate) => void;
   setSelectedDates: (dates: string[]) => void;
   setActiveDate: (date: string | null) => void;
@@ -33,12 +35,16 @@ interface CalendarState {
   setExportMapping: (mapping: Partial<ExportMapping>) => void;
   applyPublicHolidays: (holidays: PublicHolidayEvent[], overwriteExisting: boolean) => number;
   importTemplateUpdates: (updates: Partial<SchoolDayMap>, overwriteExisting: boolean) => number;
+  applySdecSeed: (overwriteExisting: boolean) => number;
   replaceCalendarState: (snapshot: CalendarSnapshotPayload) => void;
   undo: () => void;
   redo: () => void;
 }
 
-const initialDays = createSchoolYearDays(defaultSchoolYearConfig.schoolYearStart, defaultSchoolYearConfig.schoolYearEnd);
+const initialDays = createSchoolYearDaysWithSdecSeed(
+  defaultSchoolYearConfig.schoolYearStart,
+  defaultSchoolYearConfig.schoolYearEnd,
+);
 const initialRecalculated = recalculateCycles(initialDays, defaultSchoolYearConfig.cycleLength, defaultSchoolYearConfig.schoolYearStart, defaultSchoolYearConfig.schoolYearStart);
 
 export const useCalendarStore = create<CalendarState>()(
@@ -59,6 +65,18 @@ export const useCalendarStore = create<CalendarState>()(
           const nextDays = { ...state.days, [date]: { ...existing, ...updates } };
           const recalculated = recalculateCycles(nextDays, state.cycleLength, state.schoolYearStart, date);
           set({ days: recalculated, activeDate: date });
+        },
+        removeDayEvent: (date, eventName) => {
+          const state = get();
+          const existing = state.days[date];
+          if (!existing) return;
+          const events = existing.events.filter((item) => item !== eventName);
+          if (events.length === existing.events.length) return;
+          const updates: Partial<SchoolDayMap[string]> = { events };
+          if (events.length === 0 && existing.type === DayType.Event) {
+            updates.type = DayType.Normal;
+          }
+          get().updateDay(date, updates);
         },
         applyBatchUpdate: (dates, updates) => {
           const state = get();
@@ -106,6 +124,18 @@ export const useCalendarStore = create<CalendarState>()(
           );
           set({ days: recalculated });
           return appliedCount;
+        },
+        applySdecSeed: (overwriteExisting) => {
+          const state = get();
+          const { days: seeded, touched } = applySdec2026_2027Seed(state.days, overwriteExisting);
+          const recalculated = recalculateCycles(
+            seeded,
+            state.cycleLength,
+            state.schoolYearStart,
+            state.schoolYearStart,
+          );
+          set({ days: recalculated });
+          return touched;
         },
         importTemplateUpdates: (updates, overwriteExisting) => {
           const state = get();

@@ -5,6 +5,7 @@ import { useStore } from "zustand";
 import { calculateComplianceMetrics } from "@/hooks/use-compliance";
 import { recalculateCycles } from "@/lib/cycle-engine";
 import { calculateSchoolHolidayQuotaWithTrace } from "@/lib/holiday-quota";
+import { DayEventChip } from "@/components/DayEventChip";
 import { DayType } from "@/types/school-day";
 import { useCalendarStore } from "@/store/calendar-store";
 
@@ -232,7 +233,20 @@ export function ActionPanel() {
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={day.isLocked} onChange={(e) => updateDay(activeDate, { isLocked: e.target.checked })} />鎖定循環日</label>
           <label className="block text-sm">覆蓋 Cycle Day<input type="number" min={1} value={day.cycleDay ?? ""} onChange={(e) => updateDay(activeDate, { cycleDay: e.target.value ? Number(e.target.value) : null, isLocked: true })} className="mt-1 w-full rounded border px-2 py-1" /></label>
           <form onSubmit={onSubmitEvent}><input name="eventName" placeholder="新增活動名稱" className="w-full rounded border px-2 py-1" /><button type="submit" className="mt-2 w-full rounded bg-emerald-600 px-3 py-2 text-sm text-white">新增活動</button></form>
-          <div className="rounded bg-slate-100 p-2 text-xs text-slate-600">{(day.events || []).length > 0 ? day.events.join(" / ") : "尚無活動"}</div>
+          <div className="rounded bg-slate-100 p-2">
+            <p className="text-xs font-medium text-slate-600">已登記活動</p>
+            {(day.events || []).length > 0 ? (
+              <ul className="mt-1 space-y-1 p-0">
+                {day.events.map((eventName) => (
+                  <li key={`${activeDate}-${eventName}`} className="list-none">
+                    <DayEventChip date={activeDate} eventName={eventName} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-xs text-slate-500">尚無活動</p>
+            )}
+          </div>
           {trace ? (
             <div className={`rounded p-2 text-xs ${trace.included ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
               假期配額追溯：{trace.reason}
