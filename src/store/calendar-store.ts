@@ -7,7 +7,8 @@ import { defaultExportMapping, ExportMapping } from "@/types/export-mapping";
 import { PublicHolidayEvent, injectPublicHolidays } from "@/lib/public-holiday-injection";
 import { normalizeSchoolDayMap } from "@/lib/normalize-day-types";
 import { DayType, SchoolDayMap } from "@/types/school-day";
-import { applySdec2026_2027Seed } from "@/lib/apply-sdec-seed";
+import { applySdec2026_2027Seed, applySdecCatalog } from "@/lib/apply-sdec-seed";
+import { SdecParsedCatalog } from "@/lib/parse-sdec-monthly-csv";
 import { createSchoolYearDaysWithSdecSeed, defaultSchoolYearConfig } from "@/lib/calendar-init";
 import { recalculateCycles } from "@/lib/cycle-engine";
 import { CalendarSnapshotPayload } from "@/types/calendar-snapshot";
@@ -37,6 +38,7 @@ interface CalendarState {
   applyPublicHolidays: (holidays: PublicHolidayEvent[], overwriteExisting: boolean) => number;
   importTemplateUpdates: (updates: Partial<SchoolDayMap>, overwriteExisting: boolean) => number;
   applySdecSeed: (overwriteExisting: boolean) => number;
+  applySdecCatalog: (catalog: SdecParsedCatalog, overwriteExisting: boolean) => number;
   replaceCalendarState: (snapshot: CalendarSnapshotPayload) => void;
   undo: () => void;
   redo: () => void;
@@ -129,6 +131,18 @@ export const useCalendarStore = create<CalendarState>()(
         applySdecSeed: (overwriteExisting) => {
           const state = get();
           const { days: seeded, touched } = applySdec2026_2027Seed(state.days, overwriteExisting);
+          const recalculated = recalculateCycles(
+            seeded,
+            state.cycleLength,
+            state.schoolYearStart,
+            state.schoolYearStart,
+          );
+          set({ days: recalculated });
+          return touched;
+        },
+        applySdecCatalog: (catalog, overwriteExisting) => {
+          const state = get();
+          const { days: seeded, touched } = applySdecCatalog(state.days, catalog, overwriteExisting);
           const recalculated = recalculateCycles(
             seeded,
             state.cycleLength,

@@ -4,6 +4,7 @@ import { dayTypeLabel } from "@/lib/day-type-label";
 import { countByTypeForMonth } from "@/lib/month-type-stats";
 import { parseLocalDate } from "@/lib/parse-local-date";
 import { format } from "date-fns";
+import { sdecActivityCatalogRows } from "@/lib/sdec-2026-2027-catalog";
 import { SchoolDayMap } from "@/types/school-day";
 
 function uniqueMonthKeys(days: SchoolDayMap): string[] {
@@ -59,7 +60,15 @@ export function downloadSchoolYearExcelArchive(
   ];
 
   const workbook = XLSX.utils.book_new();
+  const activityCatalogRows = sdecActivityCatalogRows.map((row) => ({
+    活動名稱: row.活動名稱,
+    開始日期: row.開始日期,
+    結束日期: row.結束日期,
+    類別: row.類別,
+  }));
+
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(detailRows), "校曆明細");
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(activityCatalogRows), "活動一覽");
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(monthStatRows), "每月統計");
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(summaryRows), "學年摘要");
 

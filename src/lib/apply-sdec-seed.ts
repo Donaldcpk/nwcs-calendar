@@ -1,9 +1,5 @@
-import {
-  sdecPublicHolidays,
-  sdecSchoolEventRanges,
-  sdecSchoolHolidayRanges,
-  sdecTeacherDevelopmentDays,
-} from "@/lib/sdec-2026-2027-seed";
+import { SdecParsedCatalog } from "@/lib/parse-sdec-monthly-csv";
+import { getSdec2026_2027Catalog } from "@/lib/sdec-2026-2027-catalog";
 import { eachIsoDateInRange } from "@/lib/parse-local-date";
 import { DayType, SchoolDay, SchoolDayMap } from "@/types/school-day";
 
@@ -17,7 +13,11 @@ function addEvent(day: SchoolDay, eventName: string, overwriteExisting: boolean)
   return { ...day, events: mergeEvents(day.events, [eventName]) };
 }
 
-export function applySdec2026_2027Seed(days: SchoolDayMap, overwriteExisting: boolean): { days: SchoolDayMap; touched: number } {
+function applyCatalog(
+  days: SchoolDayMap,
+  catalog: SdecParsedCatalog,
+  overwriteExisting: boolean,
+): { days: SchoolDayMap; touched: number } {
   const next: SchoolDayMap = { ...days };
   const touchedDates = new Set<string>();
 
@@ -31,7 +31,7 @@ export function applySdec2026_2027Seed(days: SchoolDayMap, overwriteExisting: bo
     }
   };
 
-  for (const block of sdecSchoolHolidayRanges) {
+  for (const block of catalog.schoolHolidayRanges) {
     for (const date of eachIsoDateInRange(block.start, block.end)) {
       touch(date, (day) => {
         if (!overwriteExisting && day.isLocked) return day;
@@ -48,7 +48,7 @@ export function applySdec2026_2027Seed(days: SchoolDayMap, overwriteExisting: bo
     }
   }
 
-  for (const ph of sdecPublicHolidays) {
+  for (const ph of catalog.publicHolidays) {
     touch(ph.date, (day) => {
       if (!overwriteExisting && day.isLocked) return day;
       if (!overwriteExisting && day.type !== DayType.Normal && day.type !== DayType.PH) return day;
@@ -61,7 +61,7 @@ export function applySdec2026_2027Seed(days: SchoolDayMap, overwriteExisting: bo
     });
   }
 
-  for (const sdd of sdecTeacherDevelopmentDays) {
+  for (const sdd of catalog.teacherDevelopmentDays) {
     touch(sdd.date, (day) => {
       if (!overwriteExisting && day.isLocked) return day;
       return {
@@ -73,11 +73,19 @@ export function applySdec2026_2027Seed(days: SchoolDayMap, overwriteExisting: bo
     });
   }
 
-  for (const range of sdecSchoolEventRanges) {
+  for (const range of catalog.schoolEventRanges) {
     for (const date of eachIsoDateInRange(range.start, range.end)) {
       touch(date, (day) => addEvent(day, range.name, overwriteExisting));
     }
   }
 
   return { days: next, touched: touchedDates.size };
+}
+
+export function applySdec2026_2027Seed(days: SchoolDayMap, overwriteExisting: boolean): { days: SchoolDayMap; touched: number } {
+  return applyCatalog(days, getSdec2026_2027Catalog(), overwriteExisting);
+}
+
+export function applySdecCatalog(days: SchoolDayMap, catalog: SdecParsedCatalog, overwriteExisting: boolean): { days: SchoolDayMap; touched: number } {
+  return applyCatalog(days, catalog, overwriteExisting);
 }

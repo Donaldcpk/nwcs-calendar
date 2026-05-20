@@ -6,6 +6,11 @@ The format follows Keep a Changelog, and this project follows Semantic Versionin
 
 ## [Unreleased]
 
+### Added
+- SDEC `MonthlyCalendar_*_SDEC event.csv` 解析器；內建目錄與 `docs/data/MonthlyCalendar_2026_2027_SDEC_event.csv` 同步。
+- Excel 存檔新增 **活動一覽** 工作表（活動名稱、開始／結束日期、類別 PH/SH/SDD/活動）。
+- 設定頁可上傳 SDEC 活動 CSV 直接匯入校曆。
+
 ### Fixed
 - 全年日曆：每月橫幅 `col-span-7` 插入 7 欄格線導致 9 月 1 日等日期星期錯位；改為每月獨立對齊。
 - 雲端同步：序列化儲存、同帳號 409 自動重試；他人更新時可選「保留本機」或「載入雲端」，避免單人編輯被舊版覆蓋。

@@ -6,6 +6,7 @@ import { fetchHongKongPublicHolidayEvents } from "@/lib/hk-public-holidays";
 import { downloadCalendarTemplate } from "@/lib/template-export";
 import { parseTemplateWorkbook } from "@/lib/template-import";
 import { hkPublicHolidays2026to2027 } from "@/lib/hk-school-holidays-2026-2027";
+import { parseSdecMonthlyCsvFile } from "@/lib/parse-sdec-monthly-csv";
 import { useCalendarStore } from "@/store/calendar-store";
 import { SchoolDayMap } from "@/types/school-day";
 
@@ -15,6 +16,7 @@ export function SettingsPanel() {
   const applyPublicHolidays = useCalendarStore((state) => state.applyPublicHolidays);
   const importTemplateUpdates = useCalendarStore((state) => state.importTemplateUpdates);
   const applySdecSeed = useCalendarStore((state) => state.applySdecSeed);
+  const applySdecCatalog = useCalendarStore((state) => state.applySdecCatalog);
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [holidayPreview, setHolidayPreview] = useState<Array<{ date: string; summary: string }>>([]);
   const [overwriteExisting, setOverwriteExisting] = useState(false);
@@ -62,6 +64,21 @@ export function SettingsPanel() {
   const handleApplySdecCsvSeed = () => {
     const applied = applySdecSeed(overwriteExisting);
     toast.success(`已套用 SDEC 2026-27 月曆資料，共更新 ${applied} 天（假期＋活動）`);
+  };
+
+  const handleImportSdecEventCsv = async (file: File | null) => {
+    if (!file) return;
+    setTemplateLoading(true);
+    setError(null);
+    try {
+      const catalog = await parseSdecMonthlyCsvFile(file);
+      const applied = applySdecCatalog(catalog, overwriteExisting);
+      toast.success(`已從 SDEC CSV 匯入 ${catalog.activityCatalogRows.length} 項活動／假期，更新 ${applied} 天`);
+    } catch {
+      setError("SDEC CSV 匯入失敗，請確認格式為：活動名稱,開始日期,結束日期");
+    } finally {
+      setTemplateLoading(false);
+    }
   };
 
   const handleImportTemplate = async (file: File | null) => {
@@ -157,8 +174,17 @@ export function SettingsPanel() {
           className="mt-3 rounded bg-violet-600 px-3 py-2 text-sm text-white hover:bg-violet-700"
           onClick={handleApplySdecCsvSeed}
         >
-          套用 SDEC 2026-27 完整月曆資料
+          套用內建 SDEC 2026-27 完整月曆資料
         </button>
+        <div className="mt-3">
+          <p className="text-xs text-slate-500">或上傳 `MonthlyCalendar_*_SDEC event.csv`（與校曆存檔「活動一覽」欄位一致）</p>
+          <input
+            type="file"
+            accept=".csv"
+            className="mt-1 block w-full rounded border bg-white px-2 py-2 text-sm"
+            onChange={(event) => handleImportSdecEventCsv(event.target.files?.[0] ?? null)}
+          />
+        </div>
       </div>
 
       <div className="mt-4 rounded-lg border bg-white p-4">
