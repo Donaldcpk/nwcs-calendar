@@ -1,6 +1,12 @@
 import { formatISO, isValid, parse } from "date-fns";
 import * as XLSX from "xlsx";
+import { normalizeDayType } from "@/lib/normalize-day-types";
 import { DayType, SchoolDayMap } from "@/types/school-day";
+
+function countsAs190ForType(type: DayType): boolean {
+  const t = normalizeDayType(type);
+  return t !== DayType.PH && t !== DayType.SH;
+}
 
 type RawRow = Record<string, unknown>;
 
@@ -8,14 +14,15 @@ const typeMap: Record<string, DayType> = {
   normal: DayType.Normal,
   ph: DayType.PH,
   publicholiday: DayType.PH,
-  holiday: DayType.Holiday,
-  schoolholiday: DayType.Holiday,
+  holiday: DayType.SH,
+  schoolholiday: DayType.SH,
+  sh: DayType.SH,
   sdd: DayType.SDD,
   dh: DayType.DH,
   exam: DayType.Exam,
   event: DayType.Event,
   公眾假期: DayType.PH,
-  學校假期: DayType.Holiday,
+  學校假期: DayType.SH,
   教師發展日: DayType.SDD,
   自行決定假期: DayType.DH,
   測驗: DayType.Exam,
@@ -80,16 +87,18 @@ export function parseTemplateWorkbook(file: File): Promise<Partial<SchoolDayMap>
           const cycleRaw = pick(row, ["Cycle Day", "CycleDay", "循環日"]);
           const eventsRaw = String(pick(row, ["Events", "活動", "備註"]) ?? "").trim();
 
-          const parsedType = typeRaw ? normalizeType(typeRaw) : null;
+          const parsedTypeRaw = typeRaw ? normalizeType(typeRaw) : null;
+          const parsedType = parsedTypeRaw ? normalizeDayType(parsedTypeRaw) : null;
           const parsedCycle = Number(cycleRaw);
           const cycleDay = Number.isFinite(parsedCycle) && parsedCycle > 0 ? parsedCycle : null;
+          const resolvedType = parsedType ?? DayType.Normal;
 
           updates[date] = {
             date,
-            type: parsedType ?? DayType.Normal,
+            type: resolvedType,
             cycleDay,
             isLessonSuspended: false,
-            countsAs190: parsedType !== DayType.PH && parsedType !== DayType.Holiday,
+            countsAs190: countsAs190ForType(resolvedType),
             isLocked: false,
             events: eventsRaw ? eventsRaw.split(/[;,/]/).map((i) => i.trim()).filter(Boolean) : [],
           };

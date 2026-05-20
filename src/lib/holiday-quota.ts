@@ -1,10 +1,11 @@
 import { addDays, compareAsc, formatISO, getDay, parseISO, subDays } from "date-fns";
+import { isSchoolHolidayType } from "@/lib/day-type-label";
+import { normalizeDayType } from "@/lib/normalize-day-types";
 import { DayType, SchoolDayMap } from "@/types/school-day";
 
-const holidayTypes = new Set<DayType>([DayType.PH, DayType.Holiday]);
-
 function isHolidayLike(type: DayType): boolean {
-  return holidayTypes.has(type);
+  const normalized = normalizeDayType(type);
+  return normalized === DayType.PH || isSchoolHolidayType(normalized);
 }
 
 export interface HolidayTrace {

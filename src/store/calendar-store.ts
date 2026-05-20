@@ -5,6 +5,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { temporal } from "zundo";
 import { defaultExportMapping, ExportMapping } from "@/types/export-mapping";
 import { PublicHolidayEvent, injectPublicHolidays } from "@/lib/public-holiday-injection";
+import { normalizeSchoolDayMap } from "@/lib/normalize-day-types";
 import { DayType, SchoolDayMap } from "@/types/school-day";
 import { applySdec2026_2027Seed } from "@/lib/apply-sdec-seed";
 import { createSchoolYearDaysWithSdecSeed, defaultSchoolYearConfig } from "@/lib/calendar-init";
@@ -148,15 +149,14 @@ export const useCalendarStore = create<CalendarState>()(
             if (!overwriteExisting && (current.type !== DayType.Normal || current.events.length > 0 || current.isLocked)) {
               continue;
             }
-            nextDays[date] = {
-              ...current,
-              ...patch,
-            };
+            nextDays[date] = normalizeSchoolDayMap({
+              [date]: { ...current, ...patch, date },
+            })[date];
             appliedCount += 1;
           }
 
           const recalculated = recalculateCycles(
-            nextDays,
+            normalizeSchoolDayMap(nextDays),
             state.cycleLength,
             state.schoolYearStart,
             state.schoolYearStart,
@@ -166,7 +166,7 @@ export const useCalendarStore = create<CalendarState>()(
         },
         replaceCalendarState: (snapshot) => {
           set({
-            days: snapshot.days,
+            days: normalizeSchoolDayMap(snapshot.days),
             cycleLength: snapshot.cycleLength,
             schoolYearStart: snapshot.schoolYearStart,
             schoolYearEnd: snapshot.schoolYearEnd,

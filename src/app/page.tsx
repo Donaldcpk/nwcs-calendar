@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { isAfter, isBefore, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { ActionPanel } from "@/components/ActionPanel";
+import { CloudConflictDialog } from "@/components/CloudConflictDialog";
 import { ComplianceDashboard } from "@/components/ComplianceDashboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { UserAuthStatus } from "@/components/UserAuthStatus";
 import { YearGrid } from "@/components/YearGrid";
-import { ActionPanel } from "@/components/ActionPanel";
-import { useCalendarStore } from "@/store/calendar-store";
+import { useCloudSync } from "@/hooks/use-cloud-sync";
 import { useCompliance } from "@/hooks/use-compliance";
+import { downloadSchoolYearExcelArchive } from "@/lib/export-excel-archive";
 import { downloadWebSamsCsv } from "@/lib/export-websams";
-import { CalendarSnapshotPayload, CalendarSnapshotRecord } from "@/types/calendar-snapshot";
+import { useCalendarStore } from "@/store/calendar-store";
 
 function collectDateRange(start: string, end: string, allDates: string[]): string[] {
   const startDate = parseISO(start);
@@ -31,8 +33,6 @@ export default function Home() {
   const exportMapping = useCalendarStore((state) => state.exportMapping);
   const schoolYearStart = useCalendarStore((state) => state.schoolYearStart);
   const schoolYearEnd = useCalendarStore((state) => state.schoolYearEnd);
-  const cycleLength = useCalendarStore((state) => state.cycleLength);
-  const replaceCalendarState = useCalendarStore((state) => state.replaceCalendarState);
   const metrics = useCompliance(days, schoolYearStart, schoolYearEnd);
   const allDates = useMemo(() => Object.keys(days).sort(), [days]);
   const [activeTab, setActiveTab] = useState<"calendar" | "settings">("calendar");
@@ -40,18 +40,29 @@ export default function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragAnchor, setDragAnchor] = useState<string | null>(null);
   const [lastShiftAnchor, setLastShiftAnchor] = useState<string | null>(null);
-  const [syncState, setSyncState] = useState<"loading" | "ready" | "saving" | "saved" | "conflict" | "error">("loading");
-  const [bootstrapReady, setBootstrapReady] = useState(false);
-  const [lastSavedInfo, setLastSavedInfo] = useState<{ at: string; by: string } | null>(null);
-  const remoteVersionRef = useRef<number | null>(null);
-  const readyRef = useRef(false);
-  const skipNextSaveRef = useRef(false);
 
-  useEffect(() => { metrics.warnings.forEach((warning) => toast.warning(warning)); }, [metrics.warnings]);
+  const schoolYearKey = `${schoolYearStart.slice(0, 4)}-${schoolYearEnd.slice(0, 4)}`;
+  const {
+    syncState,
+    bootstrapReady,
+    syncLabel,
+    pendingConflict,
+    keepLocalEdits,
+    loadRemoteVersion,
+    dismissConflict,
+  } = useCloudSync({ schoolYearKey, schoolYearStart, schoolYearEnd });
+
+  useEffect(() => {
+    metrics.warnings.forEach((warning) => toast.warning(warning));
+  }, [metrics.warnings]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const isMeta = event.ctrlKey || event.metaKey;
-      if (isMeta && event.key.toLowerCase() === "z" && !event.shiftKey) { event.preventDefault(); useCalendarStore.getState().undo(); }
+      if (isMeta && event.key.toLowerCase() === "z" && !event.shiftKey) {
+        event.preventDefault();
+        useCalendarStore.getState().undo();
+      }
       if (isMeta && ((event.key.toLowerCase() === "z" && event.shiftKey) || event.key.toLowerCase() === "y")) {
         event.preventDefault();
         useCalendarStore.getState().redo();
@@ -61,128 +72,20 @@ export default function Home() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const schoolYearKey = `${schoolYearStart.slice(0, 4)}-${schoolYearEnd.slice(0, 4)}`;
-
-  useEffect(() => {
-    let mounted = true;
-    readyRef.current = false;
-    setBootstrapReady(false);
-    setSyncState("loading");
-
-    const bootstrap = async () => {
-      await useCalendarStore.persist.rehydrate();
-      if (!mounted) return;
-
-      const key = `${useCalendarStore.getState().schoolYearStart.slice(0, 4)}-${useCalendarStore.getState().schoolYearEnd.slice(0, 4)}`;
-
-      try {
-        const response = await fetch(`/api/calendar-state?schoolYear=${encodeURIComponent(key)}`, {
-          cache: "no-store",
-        });
-        if (!response.ok) {
-          throw new Error("無法載入雲端校曆資料");
-        }
-
-        const body = (await response.json()) as { snapshot: CalendarSnapshotRecord | null };
-        if (!mounted) return;
-
-        if (body.snapshot) {
-          skipNextSaveRef.current = true;
-          replaceCalendarState(body.snapshot.payload);
-          remoteVersionRef.current = body.snapshot.version;
-          setLastSavedInfo({ at: body.snapshot.updatedAt, by: body.snapshot.updatedBy });
-        } else {
-          remoteVersionRef.current = null;
-          setLastSavedInfo(null);
-        }
-        setSyncState("ready");
-      } catch {
-        if (!mounted) return;
-        setSyncState("error");
-        toast.error("載入雲端校曆失敗，已暫時保留目前畫面資料（含本機草稿）。");
-      } finally {
-        if (!mounted) return;
-        readyRef.current = true;
-        setBootstrapReady(true);
-      }
-    };
-
-    void bootstrap();
-    return () => {
-      mounted = false;
-    };
-  }, [replaceCalendarState, schoolYearStart, schoolYearEnd]);
-
-  useEffect(() => {
-    if (!readyRef.current) return;
-    if (skipNextSaveRef.current) {
-      skipNextSaveRef.current = false;
-      return;
-    }
-
-    const payload: CalendarSnapshotPayload = {
-      days,
-      cycleLength,
-      schoolYearStart,
-      schoolYearEnd,
-      exportMapping,
-    };
-
-    const timer = window.setTimeout(async () => {
-      setSyncState("saving");
-      try {
-        const response = await fetch("/api/calendar-state", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            schoolYear: schoolYearKey,
-            payload,
-            expectedVersion: remoteVersionRef.current,
-          }),
-        });
-
-        if (response.status === 409) {
-          const conflictBody = (await response.json()) as { snapshot: CalendarSnapshotRecord | null };
-          if (conflictBody.snapshot) {
-            skipNextSaveRef.current = true;
-            replaceCalendarState(conflictBody.snapshot.payload);
-            remoteVersionRef.current = conflictBody.snapshot.version;
-            setLastSavedInfo({ at: conflictBody.snapshot.updatedAt, by: conflictBody.snapshot.updatedBy });
-          }
-          setSyncState("conflict");
-          toast.warning("雲端版本較新，已同步為最新資料。");
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error("儲存失敗");
-        }
-
-        const body = (await response.json()) as { snapshot: CalendarSnapshotRecord };
-        remoteVersionRef.current = body.snapshot.version;
-        setLastSavedInfo({ at: body.snapshot.updatedAt, by: body.snapshot.updatedBy });
-        setSyncState("saved");
-      } catch {
-        setSyncState("error");
-        toast.error("雲端儲存失敗，請稍後再試。");
-      }
-    }, 1200);
-
-    return () => window.clearTimeout(timer);
-  }, [days, cycleLength, schoolYearStart, schoolYearEnd, exportMapping, schoolYearKey, replaceCalendarState]);
-
   const schoolYearLabel = `${schoolYearStart.slice(0, 4)}-${schoolYearEnd.slice(0, 4)}年度`;
-  const syncLabel = useMemo(() => {
-    if (!bootstrapReady || syncState === "loading") return "正在載入本機與雲端資料...";
-    if (syncState === "saving") return "雲端儲存中...";
-    if (syncState === "saved" && lastSavedInfo) return `已儲存 ${new Date(lastSavedInfo.at).toLocaleString("zh-HK")}（${lastSavedInfo.by}）`;
-    if (syncState === "conflict") return "偵測到他人更新，已同步最新版本";
-    if (syncState === "error") return "雲端同步異常，請檢查網路或稍後重試";
-    return "已連接雲端共享校曆";
-  }, [lastSavedInfo, syncState, bootstrapReady]);
+  const archiveFilename = `NWCS_${schoolYearStart.slice(0, 4)}-${schoolYearEnd.slice(2, 4)}_校曆存檔.xlsx`;
 
   return (
     <main className={`grid min-h-screen ${dashboardCollapsed ? "grid-cols-[56px_1fr_340px]" : "grid-cols-[220px_1fr_340px]"}`}>
+      {pendingConflict ? (
+        <CloudConflictDialog
+          snapshot={pendingConflict.snapshot}
+          onKeepLocal={keepLocalEdits}
+          onLoadRemote={loadRemoteVersion}
+          onCancel={dismissConflict}
+        />
+      ) : null}
+
       <ComplianceDashboard
         metrics={metrics}
         collapsed={dashboardCollapsed}
@@ -195,7 +98,7 @@ export default function Home() {
             <p className="text-sm text-slate-600">學年：{schoolYearLabel}（9/1 到翌年 8/31）</p>
             <p className={`text-xs ${syncState === "error" ? "text-rose-600" : "text-slate-500"}`}>{syncLabel}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
               className={`rounded px-3 py-2 text-sm ${activeTab === "calendar" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}
@@ -209,6 +112,13 @@ export default function Home() {
               onClick={() => setActiveTab("settings")}
             >
               設定
+            </button>
+            <button
+              type="button"
+              className="rounded border border-emerald-600 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 hover:bg-emerald-100"
+              onClick={() => downloadSchoolYearExcelArchive(days, schoolYearStart, schoolYearEnd, archiveFilename)}
+            >
+              下載 Excel 存檔
             </button>
             <button
               type="button"

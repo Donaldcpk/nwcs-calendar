@@ -35,10 +35,12 @@ export function applySdec2026_2027Seed(days: SchoolDayMap, overwriteExisting: bo
     for (const date of eachIsoDateInRange(block.start, block.end)) {
       touch(date, (day) => {
         if (!overwriteExisting && day.isLocked) return day;
-        if (!overwriteExisting && day.type !== DayType.Normal && day.type !== DayType.Holiday) return day;
+        if (!overwriteExisting && day.type !== DayType.Normal && day.type !== DayType.SH && day.type !== DayType.Holiday) {
+          return day;
+        }
         return {
           ...day,
-          type: DayType.Holiday,
+          type: DayType.SH,
           countsAs190: false,
           events: mergeEvents(overwriteExisting ? [] : day.events, [block.name]),
         };

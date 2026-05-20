@@ -6,6 +6,7 @@ import { calculateComplianceMetrics } from "@/hooks/use-compliance";
 import { recalculateCycles } from "@/lib/cycle-engine";
 import { calculateSchoolHolidayQuotaWithTrace } from "@/lib/holiday-quota";
 import { DayEventChip } from "@/components/DayEventChip";
+import { dayTypeLabel, selectableDayTypes } from "@/lib/day-type-label";
 import { DayType } from "@/types/school-day";
 import { useCalendarStore } from "@/store/calendar-store";
 
@@ -56,7 +57,7 @@ export function ActionPanel() {
     const data = new FormData(event.currentTarget);
     const name = String(data.get("eventName") || "").trim();
     if (!name) return;
-    updateDay(activeDate, { events: Array.from(new Set([...(day.events || []), name])), type: DayType.Event });
+    updateDay(activeDate, { events: Array.from(new Set([...(day.events || []), name])) });
     event.currentTarget.reset();
   };
 
@@ -204,7 +205,11 @@ export function ActionPanel() {
         </div>
         <select className="w-full rounded border px-2 py-1" value={batchType} onChange={(e) => setBatchType(e.target.value as DayType | "") }>
           <option value="">選擇日子類型</option>
-          {Object.values(DayType).map((type) => <option key={type} value={type}>{type}</option>)}
+          {selectableDayTypes.map((type) => (
+            <option key={type} value={type}>
+              {dayTypeLabel(type)}
+            </option>
+          ))}
         </select>
         <input className="w-full rounded border px-2 py-1" placeholder="新增活動（可選）" value={batchEvent} onChange={(e) => setBatchEvent(e.target.value)} />
         <label className="flex items-center gap-2 text-sm">
@@ -227,7 +232,7 @@ export function ActionPanel() {
       {day && activeDate ? (
         <div className="mt-4 space-y-3 rounded-lg border p-3">
           <p className="text-sm font-semibold">日期：{activeDate}</p>
-          <label className="block text-sm">日子類型<select className="mt-1 w-full rounded border px-2 py-1" value={day.type} onChange={(e) => updateDay(activeDate, { type: e.target.value as DayType })}>{Object.values(DayType).map((type) => <option key={type} value={type}>{type}</option>)}</select></label>
+          <label className="block text-sm">日子類型<select className="mt-1 w-full rounded border px-2 py-1" value={day.type} onChange={(e) => updateDay(activeDate, { type: e.target.value as DayType })}>{selectableDayTypes.map((type) => <option key={type} value={type}>{dayTypeLabel(type)}</option>)}</select></label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={day.isLessonSuspended} onChange={(e) => updateDay(activeDate, { isLessonSuspended: e.target.checked })} />暫停常規課堂</label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={day.countsAs190} onChange={(e) => updateDay(activeDate, { countsAs190: e.target.checked })} />計算為上課日（190）</label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={day.isLocked} onChange={(e) => updateDay(activeDate, { isLocked: e.target.checked })} />鎖定循環日</label>

@@ -1,6 +1,9 @@
 export enum DayType {
   Normal = "Normal",
   PH = "PH",
+  /** 學校假期（School Holiday），計入 90 天配額 */
+  SH = "SH",
+  /** @deprecated 讀取相容，請改用 SH */
   Holiday = "Holiday",
   SDD = "SDD",
   DH = "DH",

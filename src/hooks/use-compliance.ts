@@ -15,7 +15,7 @@ export interface ComplianceMetrics {
   warnings: string[];
 }
 
-const nonSchoolTypes = new Set<DayType>([DayType.Holiday, DayType.PH, DayType.DH, DayType.SDD]);
+const nonSchoolTypes = new Set<DayType>([DayType.SH, DayType.Holiday, DayType.PH, DayType.DH, DayType.SDD]);
 
 export function calculateComplianceMetrics(
   days: SchoolDayMap,

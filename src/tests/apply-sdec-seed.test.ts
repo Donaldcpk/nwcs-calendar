@@ -9,7 +9,7 @@ describe("apply-sdec-seed", () => {
     const { days } = applySdec2026_2027Seed(base, true);
 
     expect(days["2026-09-01"].events).toContain("開學日");
-    expect(days["2026-09-17"].type).toBe(DayType.Holiday);
+    expect(days["2026-09-17"].type).toBe(DayType.SH);
     expect(days["2026-09-18"].type).toBe(DayType.SDD);
     expect(days["2026-09-26"].type).toBe(DayType.PH);
   });
