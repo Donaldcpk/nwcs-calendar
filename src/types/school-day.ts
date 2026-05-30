@@ -3,6 +3,8 @@ export enum DayType {
   PH = "PH",
   /** 學校假期（School Holiday），計入 90 天配額 */
   SH = "SH",
+  /** 非授課週六／日，計入 S&S 79/80 上限 */
+  SS = "S&S",
   /** @deprecated 讀取相容，請改用 SH */
   Holiday = "Holiday",
   SDD = "SDD",

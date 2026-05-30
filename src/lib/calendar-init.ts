@@ -1,4 +1,4 @@
-import { addDays, formatISO, getDay, isWeekend } from "date-fns";
+import { addDays, formatISO, isWeekend } from "date-fns";
 import { applySdec2026_2027Seed } from "@/lib/apply-sdec-seed";
 import { DayType, SchoolDayMap } from "@/types/school-day";
 
@@ -21,13 +21,13 @@ export function createSchoolYearDays(start: string, end: string): SchoolDayMap {
 
   for (let current = startDate; current <= endDate; current = addDays(current, 1)) {
     const date = formatISO(current, { representation: "date" });
-    const isSunday = getDay(current) === 0;
+    const weekend = isWeekend(current);
     days[date] = {
       date,
-      type: isSunday ? DayType.PH : DayType.Normal,
+      type: weekend ? DayType.SS : DayType.Normal,
       cycleDay: null,
       isLessonSuspended: false,
-      countsAs190: !isWeekend(current) && !isSunday,
+      countsAs190: !weekend,
       isLocked: false,
       events: [],
     };

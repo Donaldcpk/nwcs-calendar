@@ -113,7 +113,7 @@ export const useCalendarStore = create<CalendarState>()(
           for (const holiday of holidays) {
             const current = state.days[holiday.date];
             if (!current) continue;
-            if (!overwriteExisting && (current.isLocked || current.type !== DayType.Normal || current.events.length > 0)) {
+            if (!overwriteExisting && (current.isLocked || (current.type !== DayType.Normal && current.type !== DayType.SS) || current.events.length > 0)) {
               continue;
             }
             appliedCount += 1;
@@ -160,7 +160,7 @@ export const useCalendarStore = create<CalendarState>()(
           for (const [date, patch] of Object.entries(updates)) {
             const current = nextDays[date];
             if (!current || !patch) continue;
-            if (!overwriteExisting && (current.type !== DayType.Normal || current.events.length > 0 || current.isLocked)) {
+            if (!overwriteExisting && ((current.type !== DayType.Normal && current.type !== DayType.SS) || current.events.length > 0 || current.isLocked)) {
               continue;
             }
             nextDays[date] = normalizeSchoolDayMap({

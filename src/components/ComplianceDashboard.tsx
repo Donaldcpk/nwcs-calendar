@@ -25,7 +25,12 @@ export function ComplianceDashboard({ metrics, collapsed, onToggle }: Props) {
         </button>
         <div className="flex w-full flex-1 flex-col items-center gap-2 px-2">
           <p className={`w-full rounded border px-1 py-1 text-center text-[10px] font-semibold ${metricColor(metrics.schoolDays >= 190)}`}>190</p>
-          <p className={`w-full rounded border px-1 py-1 text-center text-[10px] font-semibold ${metricColor(metrics.schoolHolidayQuota <= 90)}`}>90</p>
+          <p
+            className={`w-full rounded border px-1 py-1 text-center text-[10px] font-semibold ${metricColor(metrics.schoolHolidayQuota <= 90)}`}
+            title="SH（PH+SH 配額）"
+          >
+            SH
+          </p>
           <p
             className={`w-full rounded border px-1 py-1 text-center text-[10px] font-semibold ${metricColor(
               metrics.ssSchoolYear.count <= metrics.ssSchoolYear.cap,
@@ -56,21 +61,36 @@ export function ComplianceDashboard({ metrics, collapsed, onToggle }: Props) {
         </button>
       </div>
       <div className="mt-3 space-y-2">
-        <div className="rounded-lg border p-2"><p className="text-xs text-slate-600">S1-S3 上課日數</p><p className={`text-xl font-bold ${metricColor(metrics.schoolDays >= 190)}`}>{metrics.schoolDays}</p><p className="text-[11px] text-slate-500">目標: ≥ 190</p></div>
-        <div className="rounded-lg border p-2"><p className="text-xs text-slate-600">學校假期</p><p className={`text-xl font-bold ${metricColor(metrics.schoolHolidayQuota <= 90)}`}>{metrics.schoolHolidayQuota}</p><p className="text-[11px] text-slate-500">上限: 90</p></div>
-        <div className="rounded-lg border p-2"><p className="text-xs text-slate-600">DH</p><p className={`text-xl font-bold ${metricColor(metrics.dhDays <= 3)}`}>{metrics.dhDays}</p><p className="text-[11px] text-slate-500">上限: 3</p></div>
-        <div className="rounded-lg border p-2"><p className="text-xs text-slate-600">SDD</p><p className={`text-xl font-bold ${metricColor(metrics.sddDays <= 3)}`}>{metrics.sddDays}</p><p className="text-[11px] text-slate-500">上限: 3</p></div>
+        <div className="rounded-lg border p-2">
+          <p className="text-xs text-slate-600">S1-S3 上課日數</p>
+          <p className={`text-xl font-bold ${metricColor(metrics.schoolDays >= 190)}`}>{metrics.schoolDays}</p>
+          <p className="text-[11px] text-slate-500">目標: ≥ 190</p>
+        </div>
+        <div className="rounded-lg border p-2">
+          <p className="text-xs text-slate-600">SH（PH+SH 配額）</p>
+          <p className={`text-xl font-bold ${metricColor(metrics.schoolHolidayQuota <= 90)}`}>
+            {metrics.schoolHolidayQuota}/90
+          </p>
+          <p className="text-[11px] text-slate-500">上限: 90</p>
+        </div>
         <div className="rounded-lg border p-2">
           <p className="text-xs text-slate-600">S&S（不計入 90 之週末）</p>
-          <p className="text-[11px] text-slate-500">
-            以整個學年統一計算（不按曆年拆分）；PH 與 S&S 互斥。學年上限：含 2/29 為 80 天，否則 79 天。
+          <p className={`text-xl font-bold ${metricColor(metrics.ssSchoolYear.count <= metrics.ssSchoolYear.cap)}`}>
+            {metrics.ssSchoolYear.count}/{metrics.ssSchoolYear.cap}
           </p>
-          <div className="mt-2 flex items-baseline justify-between gap-2 text-sm">
-            <span className="text-slate-600">{metrics.ssSchoolYear.label}</span>
-            <span className={`font-semibold ${metricColor(metrics.ssSchoolYear.count <= metrics.ssSchoolYear.cap)}`}>
-              {metrics.ssSchoolYear.count}/{metrics.ssSchoolYear.cap}
-            </span>
-          </div>
+          <p className="text-[11px] text-slate-500">
+            {metrics.ssSchoolYear.label}；PH 與 S&S 互斥。含 2/29 上限 80，否則 79。
+          </p>
+        </div>
+        <div className="rounded-lg border p-2">
+          <p className="text-xs text-slate-600">DH</p>
+          <p className={`text-xl font-bold ${metricColor(metrics.dhDays <= 3)}`}>{metrics.dhDays}/3</p>
+          <p className="text-[11px] text-slate-500">上限: 3</p>
+        </div>
+        <div className="rounded-lg border p-2">
+          <p className="text-xs text-slate-600">SDD</p>
+          <p className={`text-xl font-bold ${metricColor(metrics.sddDays <= 3)}`}>{metrics.sddDays}/3</p>
+          <p className="text-[11px] text-slate-500">上限: 3</p>
         </div>
       </div>
     </aside>

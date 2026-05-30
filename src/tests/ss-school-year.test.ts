@@ -27,7 +27,7 @@ describe("S&S school year", () => {
     const { countedDates } = calculateSchoolHolidayQuotaWithTrace(days);
     const saturday = Object.keys(days).find((d) => {
       const wd = new Date(`${d}T00:00:00`).getDay();
-      return wd === 6 && !countedDates.has(d) && days[d].type !== DayType.PH;
+      return wd === 6 && !countedDates.has(d) && days[d].type === DayType.SS;
     });
     expect(saturday).toBeTruthy();
 
@@ -36,5 +36,15 @@ describe("S&S school year", () => {
     const afterPh = buildSsForSchoolYear(days, countedDates, start, end).count;
 
     expect(afterPh).toBe(before - 1);
+  });
+
+  test("明確 S&S 類型計入統計", () => {
+    const start = "2026-09-01";
+    const end = "2026-09-30";
+    const days = createSchoolYearDays(start, end);
+    const { countedDates } = calculateSchoolHolidayQuotaWithTrace(days);
+    const summary = buildSsForSchoolYear(days, countedDates, start, end);
+    expect(summary.count).toBeGreaterThan(0);
+    expect(days["2026-09-05"].type).toBe(DayType.SS);
   });
 });

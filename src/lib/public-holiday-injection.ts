@@ -15,7 +15,7 @@ export function injectPublicHolidays(
   for (const holiday of holidays) {
     const current = next[holiday.date];
     if (!current) continue;
-    if (!overwriteExisting && (current.isLocked || current.type !== DayType.Normal || current.events.length > 0)) {
+    if (!overwriteExisting && (current.isLocked || (current.type !== DayType.Normal && current.type !== DayType.SS) || current.events.length > 0)) {
       continue;
     }
 

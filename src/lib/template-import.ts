@@ -5,7 +5,7 @@ import { DayType, SchoolDayMap } from "@/types/school-day";
 
 function countsAs190ForType(type: DayType): boolean {
   const t = normalizeDayType(type);
-  return t !== DayType.PH && t !== DayType.SH;
+  return t !== DayType.PH && t !== DayType.SH && t !== DayType.SS;
 }
 
 type RawRow = Record<string, unknown>;
@@ -17,12 +17,15 @@ const typeMap: Record<string, DayType> = {
   holiday: DayType.SH,
   schoolholiday: DayType.SH,
   sh: DayType.SH,
+  ss: DayType.SS,
+  "s&s": DayType.SS,
   sdd: DayType.SDD,
   dh: DayType.DH,
   exam: DayType.Exam,
   event: DayType.Event,
   公眾假期: DayType.PH,
   學校假期: DayType.SH,
+  週末: DayType.SS,
   教師發展日: DayType.SDD,
   自行決定假期: DayType.DH,
   測驗: DayType.Exam,

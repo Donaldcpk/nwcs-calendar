@@ -6,7 +6,7 @@ import { DayType, SchoolDay } from "@/types/school-day";
 export function shouldShowInPrincipalAudit(day: SchoolDay): boolean {
   if (day.events.length > 0) return true;
   const type = normalizeDayType(day.type);
-  if (type === DayType.Normal) return false;
+  if (type === DayType.Normal || type === DayType.SS) return false;
   if (isSchoolHolidayType(type)) return false;
   return true;
 }

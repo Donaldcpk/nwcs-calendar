@@ -13,6 +13,7 @@ import {
   MonthTypeStatsSummary,
 } from "@/lib/month-type-stats";
 import { getLocalWeekday, parseLocalDate } from "@/lib/parse-local-date";
+import { calculateSchoolHolidayQuotaWithTrace } from "@/lib/holiday-quota";
 import { shouldShowInPrincipalAudit } from "@/lib/principal-audit";
 import { DayType, SchoolDayMap } from "@/types/school-day";
 
@@ -71,7 +72,8 @@ export function YearGrid({ days, selectedDates, onMouseDownDate, onMouseEnterDat
         setAuditMonth(targetMonth);
         return;
       }
-      const summary = countByTypeForMonth(days, leaving);
+      const { countedDates } = calculateSchoolHolidayQuotaWithTrace(days);
+      const summary = countByTypeForMonth(days, leaving, countedDates);
       setPendingNav({ leavingMonth: leaving, targetMonth, summary });
     },
     [auditMonth, days],
@@ -236,7 +238,7 @@ export function YearGrid({ days, selectedDates, onMouseDownDate, onMouseEnterDat
               const isWeekend = weekday === 0 || weekday === 6;
               const hasEvents = day.events.length > 0;
               const hasSpecial =
-                day.type !== DayType.Normal || hasEvents || day.isLessonSuspended;
+                (day.type !== DayType.Normal && day.type !== DayType.SS) || hasEvents || day.isLessonSuspended;
               const dayTextClass = isWeekend && !hasSpecial ? "text-slate-400" : "text-slate-800";
               const metaTextClass = isWeekend && !hasSpecial ? "text-slate-300" : "text-slate-600";
 

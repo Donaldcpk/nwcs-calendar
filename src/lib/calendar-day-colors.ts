@@ -6,6 +6,7 @@ export const badgeByType: Record<DayType, string> = {
   [DayType.Normal]: "bg-white border-slate-200",
   [DayType.PH]: "bg-amber-100 border-amber-200",
   [DayType.SH]: "bg-sky-100 border-sky-200",
+  [DayType.SS]: "bg-slate-100 border-slate-300",
   [DayType.Holiday]: "bg-sky-100 border-sky-200",
   [DayType.SDD]: "bg-indigo-100 border-indigo-200",
   [DayType.DH]: "bg-fuchsia-100 border-fuchsia-200",

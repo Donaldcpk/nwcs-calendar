@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { calculateComplianceMetrics } from "@/hooks/use-compliance";
+import { calculateSchoolHolidayQuotaWithTrace } from "@/lib/holiday-quota";
 import { dayTypeLabel } from "@/lib/day-type-label";
 import { countByTypeForMonth } from "@/lib/month-type-stats";
 import { parseLocalDate } from "@/lib/parse-local-date";
@@ -34,8 +35,9 @@ export function downloadSchoolYearExcelArchive(
     }));
 
   const monthKeys = uniqueMonthKeys(days);
+  const { countedDates } = calculateSchoolHolidayQuotaWithTrace(days);
   const monthStatRows = monthKeys.flatMap((key) => {
-    const summary = countByTypeForMonth(days, key);
+    const summary = countByTypeForMonth(days, key, countedDates);
     const header = { 月份: summary.monthLabel, 類型: "—", 日數: summary.totalDays };
     const body = summary.rows.map((row) => ({
       月份: summary.monthLabel,
@@ -48,7 +50,7 @@ export function downloadSchoolYearExcelArchive(
   const metrics = calculateComplianceMetrics(days, schoolYearStart, schoolYearEnd);
   const summaryRows = [
     { 項目: "S1-S3 上課日數", 數值: metrics.schoolDays, 目標: "≥ 190" },
-    { 項目: "學校假期（PH+SH 配額）", 數值: metrics.schoolHolidayQuota, 目標: "≤ 90" },
+    { 項目: "SH（PH+SH 配額）", 數值: metrics.schoolHolidayQuota, 目標: "≤ 90" },
     { 項目: "自行決定假期 DH", 數值: metrics.dhDays, 目標: "≤ 3" },
     { 項目: "教師發展日 SDD", 數值: metrics.sddDays, 目標: "≤ 3" },
     {

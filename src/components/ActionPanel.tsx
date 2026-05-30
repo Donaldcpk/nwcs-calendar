@@ -182,11 +182,14 @@ export function ActionPanel() {
               setSelectedDates(
                 Object.keys(days)
                   .sort()
-                  .filter((date) => new Date(`${date}T00:00:00`).getDay() === 6),
+                  .filter((date) => {
+                    const wd = new Date(`${date}T00:00:00`).getDay();
+                    return wd === 0 || wd === 6;
+                  }),
               )
             }
           >
-            全部星期六
+            全部週末
           </button>
           <button
             type="button"
@@ -195,12 +198,15 @@ export function ActionPanel() {
               applyBatchUpdate(
                 Object.keys(days)
                   .sort()
-                  .filter((date) => new Date(`${date}T00:00:00`).getDay() === 6),
-                { type: DayType.PH, event: "星期六公眾假期" },
+                  .filter((date) => {
+                    const wd = new Date(`${date}T00:00:00`).getDay();
+                    return wd === 0 || wd === 6;
+                  }),
+                { type: DayType.SS, countsAs190: false },
               )
             }
           >
-            全部星期六設為 PH
+            全部週末設為 S&S
           </button>
         </div>
         <select className="w-full rounded border px-2 py-1" value={batchType} onChange={(e) => setBatchType(e.target.value as DayType | "") }>

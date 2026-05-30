@@ -91,6 +91,41 @@ describe("calculateComplianceMetrics", () => {
     expect(trace["2026-01-04"]?.included).toBe(false);
   });
 
+  test("S&S 超限應被偵測", () => {
+    const start = "2026-09-01";
+    const end = "2027-08-31";
+    const days = createSchoolYearDays(start, end);
+    Object.values(days).forEach((day) => {
+      const wd = new Date(`${day.date}T00:00:00`).getDay();
+      if (wd === 0 || wd === 6) {
+        day.type = DayType.SS;
+        day.countsAs190 = false;
+      } else {
+        day.type = DayType.Normal;
+        day.countsAs190 = true;
+      }
+    });
+    const metrics = calculateComplianceMetrics(days, start, end);
+    expect(metrics.ssSchoolYear.count).toBeGreaterThan(metrics.ssSchoolYear.cap);
+    expect(metrics.warnings.some((item) => item.includes("S&S"))).toBe(true);
+  });
+
+  test("明確 S&S 類型應計入 190 週末扣除", () => {
+    const days = createSchoolYearDays("2026-09-01", "2026-09-07");
+    Object.values(days).forEach((day) => {
+      const wd = new Date(`${day.date}T00:00:00`).getDay();
+      if (wd === 0 || wd === 6) {
+        day.type = DayType.SS;
+        day.countsAs190 = false;
+      } else {
+        day.type = DayType.Normal;
+        day.countsAs190 = true;
+      }
+    });
+    const withSs = calculateComplianceMetrics(days, "2026-09-01", "2026-09-07");
+    expect(withSs.schoolDays).toBe(5);
+  });
+
   test("長假開始前被誤標假期的週末應自 90 天配額剔除", () => {
     const days = createSchoolYearDays("2026-03-05", "2026-03-22");
     Object.values(days).forEach((day) => {

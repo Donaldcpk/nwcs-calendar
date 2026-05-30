@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { dayTypeLabel, selectableDayTypes } from "@/lib/day-type-label";
 import { parseLocalDate } from "@/lib/parse-local-date";
 import { normalizeDayType } from "@/lib/normalize-day-types";
+import { countSsForMonth } from "@/lib/ss-school-year";
 import { DayType, SchoolDayMap } from "@/types/school-day";
 
 export interface MonthTypeStatRow {
@@ -17,7 +18,11 @@ export interface MonthTypeStatsSummary {
   totalDays: number;
 }
 
-export function countByTypeForMonth(days: SchoolDayMap, monthKey: string): MonthTypeStatsSummary {
+export function countByTypeForMonth(
+  days: SchoolDayMap,
+  monthKey: string,
+  countedDates?: ReadonlySet<string>,
+): MonthTypeStatsSummary {
   const counts = new Map<string, number>();
   for (const type of selectableDayTypes) {
     counts.set(dayTypeLabel(type), 0);
@@ -43,6 +48,22 @@ export function countByTypeForMonth(days: SchoolDayMap, monthKey: string): Month
 
   if (normalWithEvents > 0) {
     rows.push({ label: "Normal（有活動標籤）", count: normalWithEvents });
+  }
+
+  if (countedDates) {
+    let shQuotaInMonth = 0;
+    for (const day of Object.values(days)) {
+      if (!day.date.startsWith(monthKey)) continue;
+      if (countedDates.has(day.date)) shQuotaInMonth += 1;
+    }
+    if (shQuotaInMonth > 0) {
+      rows.push({ label: "SH 配額（本月計入 90）", count: shQuotaInMonth });
+    }
+
+    const ssInMonth = countSsForMonth(days, monthKey, countedDates);
+    if (ssInMonth > 0) {
+      rows.push({ label: "S&S（本月合計）", count: ssInMonth });
+    }
   }
 
   const sampleDate = parseLocalDate(`${monthKey}-01`);
