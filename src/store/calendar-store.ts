@@ -6,6 +6,7 @@ import { temporal } from "zundo";
 import { defaultExportMapping, ExportMapping } from "@/types/export-mapping";
 import { PublicHolidayEvent, injectPublicHolidays } from "@/lib/public-holiday-injection";
 import { normalizeSchoolDayMap } from "@/lib/normalize-day-types";
+import { resolveCountsAs190ForTypeChange } from "@/lib/day-type-label";
 import { DayType, SchoolDayMap } from "@/types/school-day";
 import { applySdec2026_2027Seed, applySdecCatalog } from "@/lib/apply-sdec-seed";
 import { SdecParsedCatalog } from "@/lib/parse-sdec-monthly-csv";
@@ -65,7 +66,15 @@ export const useCalendarStore = create<CalendarState>()(
           const state = get();
           const existing = state.days[date];
           if (!existing) return;
-          const nextDays = { ...state.days, [date]: { ...existing, ...updates } };
+          const type = updates.type ?? existing.type;
+          const countsAs190 =
+            updates.type !== undefined
+              ? resolveCountsAs190ForTypeChange(type, updates.countsAs190)
+              : updates.countsAs190 ?? existing.countsAs190;
+          const nextDays = {
+            ...state.days,
+            [date]: { ...existing, ...updates, type, countsAs190 },
+          };
           const recalculated = recalculateCycles(nextDays, state.cycleLength, state.schoolYearStart, date);
           set({ days: recalculated, activeDate: date });
         },
@@ -88,11 +97,16 @@ export const useCalendarStore = create<CalendarState>()(
           for (const date of dates) {
             const day = nextDays[date];
             if (!day) continue;
+            const type = updates.type ?? day.type;
+            const countsAs190 =
+              updates.type !== undefined
+                ? resolveCountsAs190ForTypeChange(type, updates.countsAs190)
+                : updates.countsAs190 ?? day.countsAs190;
             nextDays[date] = {
               ...day,
               ...(updates.type ? { type: updates.type } : {}),
               ...(updates.isLessonSuspended !== undefined ? { isLessonSuspended: updates.isLessonSuspended } : {}),
-              ...(updates.countsAs190 !== undefined ? { countsAs190: updates.countsAs190 } : {}),
+              countsAs190,
               ...(updates.event ? { events: Array.from(new Set([...day.events, updates.event])) } : {}),
             };
           }

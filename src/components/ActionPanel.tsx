@@ -6,7 +6,7 @@ import { calculateComplianceMetrics } from "@/hooks/use-compliance";
 import { recalculateCycles } from "@/lib/cycle-engine";
 import { calculateSchoolHolidayQuotaWithTrace } from "@/lib/holiday-quota";
 import { DayEventChip } from "@/components/DayEventChip";
-import { dayTypeLabel, selectableDayTypes } from "@/lib/day-type-label";
+import { dayTypeLabel, resolveCountsAs190ForTypeChange, selectableDayTypes } from "@/lib/day-type-label";
 import { DayType } from "@/types/school-day";
 import { useCalendarStore } from "@/store/calendar-store";
 
@@ -70,12 +70,18 @@ export function ActionPanel() {
     for (const date of sortedDates) {
       const current = nextDays[date];
       if (!current) continue;
+      const type = batchType || current.type;
+      const countsAs190 = batchType
+        ? resolveCountsAs190ForTypeChange(type, batchCountsAs190 ? true : undefined)
+        : batchCountsAs190
+          ? true
+          : current.countsAs190;
       nextDays[date] = {
         ...current,
         ...(batchType ? { type: batchType } : {}),
         ...(batchEvent ? { events: Array.from(new Set([...current.events, batchEvent])) } : {}),
         ...(batchSuspendLessons ? { isLessonSuspended: true } : {}),
-        ...(batchCountsAs190 ? { countsAs190: true } : {}),
+        countsAs190,
       };
     }
 
@@ -107,7 +113,7 @@ export function ActionPanel() {
       type: batchType || undefined,
       event: batchEvent || undefined,
       isLessonSuspended: batchSuspendLessons || undefined,
-      countsAs190: batchCountsAs190 || undefined,
+      countsAs190: batchCountsAs190 ? true : undefined,
     });
     setPreviewOpen(false);
   };

@@ -33,3 +33,14 @@ export function isSchoolHolidayType(type: DayType): boolean {
   const normalized = normalizeDayType(type);
   return normalized === DayType.SH;
 }
+
+/** 變更日子類型時，若未明確指定 countsAs190，依類型決定預設值 */
+export function defaultCountsAs190ForType(type: DayType): boolean {
+  const normalized = normalizeDayType(type);
+  return normalized === DayType.Normal || normalized === DayType.Exam || normalized === DayType.Event;
+}
+
+export function resolveCountsAs190ForTypeChange(type: DayType, explicit?: boolean): boolean {
+  if (explicit !== undefined) return explicit;
+  return defaultCountsAs190ForType(type);
+}
